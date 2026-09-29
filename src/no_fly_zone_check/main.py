@@ -1,12 +1,5 @@
-"""
-禁飞区检测模块 (No-Fly Zone Check)
-
-功能：给定一个地理坐标，判断它是否落在预设的禁飞区内。
-算法：Haversine 公式计算球面距离。
-用法：python main.py
-"""
-
 import math
+import airsim  # 引入 AirSim 模拟器官方 Python 客户端库
 
 # ============ 禁飞区定义 ============
 NO_FLY_ZONES = [
@@ -14,78 +7,59 @@ NO_FLY_ZONES = [
     {'name': 'MilitaryBase', 'lat': 47.60, 'lon': -122.20, 'radius_m': 1500},
     {'name': 'School',       'lat': 47.62, 'lon': -122.10, 'radius_m': 500},
 ]
-
 EARTH_RADIUS_M = 6371000
-
 
 def distance_m(lat1, lon1, lat2, lon2):
     """Haversine 公式：计算两点间球面距离（米）"""
-    phi1 = math.radians(lat1)
-    phi2 = math.radians(lat2)
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
     dphi = math.radians(lat2 - lat1)
     dlambda = math.radians(lon2 - lon1)
-    a = math.sin(dphi / 2) ** 2 + \
-        math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+    a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
     return 2 * EARTH_RADIUS_M * math.asin(math.sqrt(a))
 
-
 def check_no_fly_zone(lat, lon):
+    """判断坐标是否在禁飞区内"""
     for zone in NO_FLY_ZONES:
         d = distance_m(lat, lon, zone['lat'], zone['lon'])
         if d <= zone['radius_m']:
             return zone['name'], d
     return None, None
 
-
-def check_mission_zones(pickup, delivery):
-    for label, (lat, lon) in [('Pickup', pickup), ('Delivery', delivery)]:
-        zone, dist = check_no_fly_zone(lat, lon)
-        if zone:
-            return False, f'{label} point is inside no-fly zone [{zone}] ' \
-                          f'({dist:.1f} m from center)'
-    return True, 'Both points are safe'
-
-
 def main():
-    print('=' * 50)
-    print('No-Fly Zone Check Module')
-    print('=' * 50)
-    print(f'Loaded {len(NO_FLY_ZONES)} no-fly zones:')
-    for z in NO_FLY_ZONES:
-        print(f"  - {z['name']:14s} center=({z['lat']}, {z['lon']}) "
-              f"radius={z['radius_m']}m")
-    print()
+    # ========== 关键修改：连接 AirSim 模拟器 ==========
+    print("[INFO] 正在连接 AirSim 模拟器 (127.0.0.1:41451)...")
+    # 使用 AirSim 官方接口实例化无人机客户端
+    client = airsim.MultirotorClient(ip="127.0.0.1", port=41451)
+    
+    try:
+        # 确认连接（这是判断模拟器是否真实运行的核心接口）
+        client.confirmConnection()
+        print("[INFO] AirSim 模拟器连接成功！")
+    except Exception as e:
+        print(f"[ERROR] 无法连接 AirSim 模拟器。请确保已启动 AirSim 1.8.1 模拟环境。")
+        print(f"[ERROR] 异常信息: {e}")
+        return
 
-    test_cases = [
-        ('Airport center',       47.65, -122.14),
-        ('Near Airport',         47.66, -122.13),
-        ('Military base center', 47.60, -122.20),
-        ('School center',        47.62, -122.10),
-        ('Safe location (CN)',   30.00, 120.00),
-        ('Safe location (US)',   40.00, -100.00),
-    ]
+    # ========== 从模拟器获取无人机位置 ==========
+    print("[INFO] 正在从模拟器获取无人机状态...")
+    state = client.getMultirotorState()
+    
+    # 获取 NED 坐标系下的位置数据（单位：米）
+    pos = state.kinematics_estimated.position
+    print(f"[INFO] 模拟器返回 NED 坐标系: x={pos.x_val:.2f}m, y={pos.y_val:.2f}m, z={pos.z_val:.2f}m")
 
-    print('-' * 50)
-    print('Test Results')
-    print('-' * 50)
-    for name, lat, lon in test_cases:
-        zone, dist = check_no_fly_zone(lat, lon)
-        if zone:
-            print(f'[WARNING] {name:24s} ({lat}, {lon}) '
-                  f'-> INSIDE zone [{zone}] ({dist:.1f} m)')
-        else:
-            print(f'[OK]      {name:24s} ({lat}, {lon}) -> safe')
+    # 将模拟器坐标映射为经纬度（这里假定禁飞区附近的初始经纬度作为原点进行换算）
+    # 严谨说明：实际场景应使用无人机搭载的 GPS 模块获取真实经纬度
+    drone_lat = 47.65 + pos.x_val * 0.00001
+    drone_lon = -122.14 + pos.y_val * 0.00001
+    print(f"[INFO] 换算为经纬度坐标: ({drone_lat:.5f}, {drone_lon:.5f})")
 
-    print()
-    print('-' * 50)
-    print('Mission check example')
-    print('-' * 50)
-    pickup = (47.65, -122.14)
-    delivery = (30.00, 120.00)
-    ok, msg = check_mission_zones(pickup, delivery)
-    print(f'Pickup={pickup}, Delivery={delivery}')
-    print(f'Result: {msg}')
-
+    # ========== 执行禁飞区检测 ==========
+    zone, dist = check_no_fly_zone(drone_lat, drone_lon)
+    if zone:
+        print(f"[警告] 无人机在禁飞区【{zone}】内，距离中心 {dist:.1f} 米！请立即返航！")
+    else:
+        print("[安全] 无人机不在禁飞区内。")
 
 if __name__ == '__main__':
     main()
