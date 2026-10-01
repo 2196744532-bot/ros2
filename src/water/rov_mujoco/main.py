@@ -344,19 +344,23 @@ def run_gui():
         pass
     print("\n[INFO] 仿真已安全结束。")
 
-def run_task2_launch():
-    """使用 ros2 launch 启动任务 2"""
-    _run_launch("task2.launch.py", "任务 2 航迹跟踪与多传感器仿真")
+def run_trajectory_tracking_launch():
+    """使用 ros2 launch 启动水下多传感器感知与 3D 轨迹跟踪系统 (任务 2)"""
+    _run_launch("trajectory_tracking.launch.py", "水下多传感器感知与 3D 轨迹跟踪仿真")
 
-def run_task2_test():
-    """执行任务 2 自动化测试与性能对比评测"""
-    test_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test", "test_task2.py")
-    _run_script(test_path, "任务 2 轨迹跟踪测试")
+run_task2_launch = run_trajectory_tracking_launch
 
-def run_task2_gui():
-    """启动任务 2: 3D 可视化视窗下的水下多传感器感知与神经网络轨迹自主跟踪"""
+def run_trajectory_tracking_test():
+    """执行水下多传感器感知与 3D 轨迹跟踪自动化测试与性能对比评测 (任务 2)"""
+    test_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test", "test_trajectory_tracking.py")
+    _run_script(test_path, "水下多传感器感知与 3D 轨迹跟踪测试")
+
+run_task2_test = run_trajectory_tracking_test
+
+def run_trajectory_tracking_gui():
+    """启动 3D 可视化视窗下的水下多传感器感知与神经网络 3D 轨迹自主跟踪"""
     print("=" * 65)
-    print("  水下机器人多传感器感知与神经网络 3D 轨迹跟踪系统 (任务 2)")
+    print("  水下机器人多传感器感知与神经网络 3D 轨迹跟踪系统")
     print("=" * 65)
 
     try:
@@ -388,7 +392,7 @@ def run_task2_gui():
     sim_node.data.qvel[sim_node.model.jnt_dofadr[sim_node.joint_id]: sim_node.model.jnt_dofadr[sim_node.joint_id] + 6] = 0.0
     mujoco.mj_forward(sim_node.model, sim_node.data)
 
-    print("\n[INFO] 正在拉起 MuJoCo 3D Viewer 渲染视窗 (任务 2 自主巡航跟踪模式)...")
+    print("\n[INFO] 正在拉起 MuJoCo 3D Viewer 渲染视窗 (自主巡航跟踪模式)...")
     print("系统状态:")
     print("  ▶ 控制算法: 深度神经网络 (NN MLP Policy, 10->64->64->4)")
     print("  ▶ 巡航轨迹: 3D 空间螺旋线立体巡检 (R=2.0m, Z=-1.0m~-3.0m)")
@@ -450,10 +454,10 @@ def run_task2_gui():
             import traceback
             traceback.print_exc()
 
-    print("\n\n>>> 仿真已结束，正在统计任务 2 航迹跟踪性能报表...")
+    print("\n\n>>> 仿真已结束，正在统计航迹跟踪性能报表...")
     summary = sim_node.evaluator.summary()
     print("=" * 65)
-    print("          任务 2 神经网络 3D 轨迹跟踪性能评价报告")
+    print("          神经网络 3D 轨迹跟踪性能评价报告")
     print("=" * 65)
     print(f"  ▶ 3D 空间均方根误差 (3D RMSE):  {summary['rmse_3d']:.4f} m")
     print(f"  ▶ 水平平面均方根误差 (XY RMSE):  {summary['rmse_xy']:.4f} m")
@@ -469,7 +473,7 @@ def run_task2_gui():
             rclpy.shutdown()
     except Exception:
         pass
-    print("[INFO] 任务 2 仿真已安全结束。")
+    print("[INFO] 轨迹跟踪仿真已安全结束。")
     os._exit(0)
 
 def run_task3_launch():
@@ -925,9 +929,9 @@ def main():
     parser.add_argument("--gui", action="store_true", help="拉起 3D 可视化 Viewer 交互视窗 (6-DOF 键盘遥控)")
     parser.add_argument("--ros2", action="store_true", help="运行 ROS2 集成节点")
     parser.add_argument("--test", "--test1", action="store_true", dest="test1", help="运行任务 1 仿真与 6-DOF 运动控制自动化验证测试")
-    parser.add_argument("--task2", action="store_true", help="拉起任务 2: 3D 可视化视窗下的多传感器感知与神经网络自主航迹跟踪")
-    parser.add_argument("--launch2", action="store_true", help="调用 ros2 launch 启动任务 2")
-    parser.add_argument("--test2", action="store_true", help="运行任务 2 自动化感知与控制综合评测")
+    parser.add_argument("--track", "--track-gui", "--task2", action="store_true", dest="track", help="拉起 3D 可视化视窗下的多传感器感知与神经网络 3D 轨迹自主跟踪 (任务 2)")
+    parser.add_argument("--launch-track", "--launch2", action="store_true", dest="launch_track", help="调用 ros2 launch 启动水下多传感器感知与 3D 轨迹跟踪系统 (任务 2)")
+    parser.add_argument("--eval-trajectory", "--test2", action="store_true", dest="eval_trajectory", help="运行水下多传感器感知与 3D 轨迹跟踪自动化测试与性能对比评测 (任务 2)")
     parser.add_argument("--task3", action="store_true", help="拉起任务 3: 3D 可视化视窗下的水下声呐 SLAM 栅格建图与神经网络自主导航")
     parser.add_argument("--launch3", action="store_true", help="调用 ros2 launch 启动任务 3")
     parser.add_argument("--test3", action="store_true", help="运行任务 3 自动化 SLAM 与导航规划综合评测")
@@ -950,12 +954,12 @@ def main():
         run_task3_launch()
     elif args.test3:
         run_task3_test()
-    elif args.task2:
-        run_task2_gui()
-    elif args.launch2:
-        run_task2_launch()
-    elif args.test2:
-        run_task2_test()
+    elif args.track:
+        run_trajectory_tracking_gui()
+    elif args.launch_track:
+        run_trajectory_tracking_launch()
+    elif args.eval_trajectory:
+        run_trajectory_tracking_test()
     elif args.test1:
         run_task1_test()
     elif args.launch:
