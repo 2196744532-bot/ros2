@@ -9,7 +9,6 @@ title: 主页
   - [人形机器人](#humanoid)
   - [肌肉骨骼人](#musculoskeletal)
   - [地面载具](#ground_vehicle)
-  - [禁飞区检测模块](no_fly_zone_check/index.md)
   - [空域载具](#air_vehicle)
   - [水域载具](#water_vehicle)
 
@@ -85,7 +84,7 @@ ROS每章节运行代码:
 * [低空载具的 ROS 示例教程](https://openhutb.github.io/air_doc/airsim_tutorial_pkgs/)
 
 * [AP-CPP 主动感知覆盖路径规划](./ap_cpp_overfomo.md) —— 基于 AirSim 的无人机主动感知覆盖路径规划，在 OverFOMO 自适应覆盖规划的基础上进一步决定「该去哪里看」
-
+* [禁飞区检测模块](air/no_fly_zone_check/index.md)
 
 
 ## 6. 水域载具  <span id='water_vehicle'></span>
